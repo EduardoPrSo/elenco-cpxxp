@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth-utils";
+import { Role } from "@/types/prisma";
 
 // Listar todas as perguntas
 export async function GET() {
@@ -26,7 +27,7 @@ export async function GET() {
 // Criar nova pergunta
 export async function POST(request: NextRequest) {
   try {
-    await requireRole(["ADMIN"]);
+    await requireRole([Role.ADMIN]);
     
     const { question, type, required, options } = await request.json();
     
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
 // Atualizar pergunta
 export async function PATCH(request: NextRequest) {
   try {
-    await requireRole(["ADMIN"]);
+    await requireRole([Role.ADMIN]);
     
     const { id, question, type, required, options } = await request.json();
     
@@ -119,7 +120,7 @@ export async function PATCH(request: NextRequest) {
 // Deletar pergunta
 export async function DELETE(request: NextRequest) {
   try {
-    await requireRole(["ADMIN"]);
+    await requireRole([Role.ADMIN]);
     
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

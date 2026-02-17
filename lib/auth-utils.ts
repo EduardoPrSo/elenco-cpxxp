@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "./auth";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/prisma";
 
 export async function getCurrentUser() {
   const session = await getServerSession(authOptions);
@@ -25,10 +25,10 @@ export async function requireRole(allowedRoles: Role[]) {
 
 export async function isAdmin() {
   const user = await getCurrentUser();
-  return user?.role === "ADMIN";
+  return user?.role === Role.ADMIN;
 }
 
 export async function isReaderOrAdmin() {
   const user = await getCurrentUser();
-  return user?.role === "READER" || user?.role === "ADMIN";
+  return user?.role === Role.READER || user?.role === Role.ADMIN;
 }

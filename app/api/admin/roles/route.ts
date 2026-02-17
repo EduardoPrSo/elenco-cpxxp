@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth-utils";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/prisma";
 import { prisma } from "@/lib/prisma";
 
 // GET - Listar todas as roles pré-configuradas e usuários existentes

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth-utils";
+import { Role } from "@/types/prisma";
 import { prisma } from "@/lib/prisma";
 
 // GET - Listar todos os webhooks
 export async function GET(req: NextRequest) {
   try {
-    const user = await requireRole(["ADMIN"]);
+    const user = await requireRole([Role.ADMIN]);
     
     const webhooks = await prisma.webhook.findMany({
       orderBy: { createdAt: "desc" },
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
 // POST - Criar novo webhook
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireRole(["ADMIN"]);
+    const user = await requireRole([Role.ADMIN]);
     const body = await req.json();
     const { name, url } = body;
     
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
 // PATCH - Atualizar webhook
 export async function PATCH(req: NextRequest) {
   try {
-    const user = await requireRole(["ADMIN"]);
+    const user = await requireRole([Role.ADMIN]);
     const body = await req.json();
     const { id, name, url, isActive } = body;
     
@@ -98,7 +99,7 @@ export async function PATCH(req: NextRequest) {
 // DELETE - Deletar webhook
 export async function DELETE(req: NextRequest) {
   try {
-    const user = await requireRole(["ADMIN"]);
+    const user = await requireRole([Role.ADMIN]);
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     

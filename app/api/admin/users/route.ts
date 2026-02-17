@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth-utils";
+import { Role } from "@/types/prisma";
 
 // Listar todos os usuários
 export async function GET() {
   try {
-    await requireRole(["ADMIN"]);
+    await requireRole([Role.ADMIN]);
     
     const users = await prisma.user.findMany({
       select: {
@@ -34,7 +35,7 @@ export async function GET() {
 // Atualizar role de um usuário
 export async function PATCH(request: NextRequest) {
   try {
-    await requireRole(["ADMIN"]);
+    await requireRole([Role.ADMIN]);
     
     const { userId, role } = await request.json();
     

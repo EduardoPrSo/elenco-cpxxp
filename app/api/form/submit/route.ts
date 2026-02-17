@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       const embed = {
         title: "📝 Novo Formulário Recebido",
         color: 0x5865F2, // Azul Discord
-        fields: questionsWithAnswers.map((qa) => ({
+        fields: questionsWithAnswers.map((qa: any) => ({
           name: qa.question.question,
           value: qa.answer || "_(não respondido)_",
           inline: false,
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       };
       
       // Enviar para todos os webhooks ativos
-      const webhookPromises = webhooks.map(async (webhook) => {
+      const webhookPromises = webhooks.map(async (webhook: any) => {
         try {
           const response = await fetch(webhook.url, {
             method: 'POST',

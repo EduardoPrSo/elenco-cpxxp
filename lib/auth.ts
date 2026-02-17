@@ -3,7 +3,7 @@ import DiscordProvider from "next-auth/providers/discord";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import { Adapter } from "next-auth/adapters";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/prisma";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as Adapter,
@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
             ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`
             : null,
           discordId: profile.id,
-          role: 'USER',
+          role: Role.USER,
         };
       },
     }),
@@ -41,15 +41,15 @@ export const authOptions: NextAuthOptions = {
           session.user.discordId = dbUser.discordId;
           
           // Se o usuário não tem role definida ou é USER, verificar se é admin
-          if (!dbUser.role || dbUser.role === 'USER') {
+          if (!dbUser.role || dbUser.role === Role.USER) {
             const adminIds = process.env.ADMIN_DISCORD_IDS?.split(',').map(id => id.trim()) || [];
             if (adminIds.includes(dbUser.discordId)) {
               // Promover para admin
               await prisma.user.update({
                 where: { id: user.id },
-                data: { role: 'ADMIN' },
+                data: { role: Role.ADMIN },
               });
-              session.user.role = 'ADMIN';
+              session.user.role = Role.ADMIN;
             }
           }
         }
@@ -70,7 +70,7 @@ export const authOptions: NextAuthOptions = {
         where: { userId: user.id },
       });
       
-      const discordAccount = accounts.find(acc => acc.provider === 'discord');
+      const discordAccount = accounts.find((acc: any) => acc.provider === 'discord');
       
       if (discordAccount) {
         const discordId = discordAccount.providerAccountId;

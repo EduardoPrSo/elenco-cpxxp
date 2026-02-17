@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth-utils";
+import { Role } from "@/types/prisma";
 
 // Listar todas as respostas (apenas READER e ADMIN)
 export async function GET() {
   try {
-    await requireRole(["READER", "ADMIN"]);
+    await requireRole([Role.READER, Role.ADMIN]);
     
     const responses = await prisma.formResponse.findMany({
       include: {
