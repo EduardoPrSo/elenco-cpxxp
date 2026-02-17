@@ -2,7 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
-import { Adapter } from "next-auth/adapters";
+import { Adapter, AdapterUser, AdapterAccount } from "next-auth/adapters";
 import { Role } from "@/types/prisma";
 
 // Custom adapter que previne duplicação de usuários
@@ -11,11 +11,11 @@ function CustomPrismaAdapter(p: typeof prisma): Adapter {
   
   return {
     ...baseAdapter,
-    async createUser(user) {
+    async createUser(user: Omit<AdapterUser, "id">) {
       // Verificar se já existe um usuário com este discordId
-      if (user.discordId) {
+      if ((user as any).discordId) {
         const existingUser = await p.user.findUnique({
-          where: { discordId: user.discordId as string },
+          where: { discordId: (user as any).discordId as string },
         });
         
         if (existingUser) {
@@ -28,14 +28,14 @@ function CustomPrismaAdapter(p: typeof prisma): Adapter {
               image: user.image,
               emailVerified: user.emailVerified,
             },
-          }) as any;
+          }) as AdapterUser;
         }
       }
       
       // Se não existir, criar normalmente
       return baseAdapter.createUser!(user);
     },
-    async linkAccount(account) {
+    async linkAccount(account: AdapterAccount) {
       // Verificar se já existe um usuário com este discordId (do providerAccountId)
       if (account.provider === 'discord') {
         const existingUser = await p.user.findUnique({
