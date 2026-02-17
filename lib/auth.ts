@@ -26,6 +26,44 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === 'discord' && account.providerAccountId) {
+        const discordId = account.providerAccountId;
+        
+        // Verificar se já existe um usuário com este discordId
+        const existingUser = await prisma.user.findUnique({
+          where: { discordId },
+        });
+        
+        // Se existir um usuário pré-configurado, mesclar os dados
+        if (existingUser && user.id !== existingUser.id) {
+          // Atualizar o usuário existente com os dados do Discord
+          await prisma.user.update({
+            where: { id: existingUser.id },
+            data: {
+              name: user.name,
+              email: user.email,
+              image: user.image,
+            },
+          });
+          
+          // Vincular a conta Discord ao usuário existente
+          await prisma.account.updateMany({
+            where: { userId: user.id },
+            data: { userId: existingUser.id },
+          });
+          
+          // Remover o usuário duplicado se foi criado
+          await prisma.user.delete({
+            where: { id: user.id },
+          }).catch(() => {
+            // Ignorar erro se o usuário não existir mais
+          });
+        }
+      }
+      
+      return true;
+    },
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
