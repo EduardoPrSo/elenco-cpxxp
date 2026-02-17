@@ -5,8 +5,72 @@ import { prisma } from "./prisma";
 import { Adapter } from "next-auth/adapters";
 import { Role } from "@/types/prisma";
 
+// Custom adapter que previne duplicação de usuários
+function CustomPrismaAdapter(p: typeof prisma): Adapter {
+  const baseAdapter = PrismaAdapter(p) as Adapter;
+  
+  return {
+    ...baseAdapter,
+    async createUser(user) {
+      // Verificar se já existe um usuário com este discordId
+      if (user.discordId) {
+        const existingUser = await p.user.findUnique({
+          where: { discordId: user.discordId as string },
+        });
+        
+        if (existingUser) {
+          // Atualizar o usuário existente ao invés de criar um novo
+          return await p.user.update({
+            where: { id: existingUser.id },
+            data: {
+              name: user.name,
+              email: user.email,
+              image: user.image,
+              emailVerified: user.emailVerified,
+            },
+          }) as any;
+        }
+      }
+      
+      // Se não existir, criar normalmente
+      return baseAdapter.createUser!(user);
+    },
+    async linkAccount(account) {
+      // Verificar se já existe um usuário com este discordId (do providerAccountId)
+      if (account.provider === 'discord') {
+        const existingUser = await p.user.findUnique({
+          where: { discordId: account.providerAccountId },
+        });
+        
+        if (existingUser) {
+          // Vincular a conta ao usuário existente
+          account.userId = existingUser.id;
+          
+          // Verificar e aplicar role pré-configurada se existir
+          const preConfiguredRole = await p.preConfiguredRole.findUnique({
+            where: { discordId: account.providerAccountId },
+          });
+          
+          if (preConfiguredRole) {
+            await p.user.update({
+              where: { id: existingUser.id },
+              data: { role: preConfiguredRole.role },
+            });
+            
+            await p.preConfiguredRole.delete({
+              where: { discordId: account.providerAccountId },
+            });
+          }
+        }
+      }
+      
+      return baseAdapter.linkAccount!(account);
+    },
+  };
+}
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as Adapter,
+  adapter: CustomPrismaAdapter(prisma),
   providers: [
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID!,
@@ -26,44 +90,6 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      if (account?.provider === 'discord' && account.providerAccountId) {
-        const discordId = account.providerAccountId;
-        
-        // Verificar se já existe um usuário com este discordId
-        const existingUser = await prisma.user.findUnique({
-          where: { discordId },
-        });
-        
-        // Se existir um usuário pré-configurado, mesclar os dados
-        if (existingUser && user.id !== existingUser.id) {
-          // Atualizar o usuário existente com os dados do Discord
-          await prisma.user.update({
-            where: { id: existingUser.id },
-            data: {
-              name: user.name,
-              email: user.email,
-              image: user.image,
-            },
-          });
-          
-          // Vincular a conta Discord ao usuário existente
-          await prisma.account.updateMany({
-            where: { userId: user.id },
-            data: { userId: existingUser.id },
-          });
-          
-          // Remover o usuário duplicado se foi criado
-          await prisma.user.delete({
-            where: { id: user.id },
-          }).catch(() => {
-            // Ignorar erro se o usuário não existir mais
-          });
-        }
-      }
-      
-      return true;
-    },
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
