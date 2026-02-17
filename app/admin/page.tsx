@@ -59,6 +59,9 @@ export default function AdminPage() {
   const [showUserForm, setShowUserForm] = useState(false);
   const [newUserData, setNewUserData] = useState({ discordId: '', role: 'READER' as Role });
   const [editingUserRole, setEditingUserRole] = useState<{ id: string; role: Role; type: 'user' | 'preconfigured' } | null>(null);
+  const [roleFilter, setRoleFilter] = useState<Role[]>(['READER', 'ADMIN']); // Filtro de roles
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [discordIdFilter, setDiscordIdFilter] = useState(''); // Filtro de Discord ID
   
   // Questions state
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -177,6 +180,29 @@ export default function AdminPage() {
       console.error("Erro ao remover role:", error);
     }
   };
+  
+  const toggleRoleFilter = (role: Role) => {
+    setRoleFilter(prev => 
+      prev.includes(role) 
+        ? prev.filter(r => r !== role)
+        : [...prev, role]
+    );
+  };
+  
+  const filteredUsers = users
+    .filter(user => roleFilter.includes(user.role))
+    .filter(user => 
+      !discordIdFilter || 
+      user.discordId.toLowerCase().includes(discordIdFilter.toLowerCase()) ||
+      user.name?.toLowerCase().includes(discordIdFilter.toLowerCase())
+    );
+    
+  const filteredPreConfigured = preConfiguredRoles
+    .filter(role => roleFilter.includes(role.role))
+    .filter(role => 
+      !discordIdFilter || 
+      role.discordId.toLowerCase().includes(discordIdFilter.toLowerCase())
+    );
   
   const deleteQuestion = async (questionId: string) => {
     if (!confirm("Tem certeza que deseja deletar esta pergunta?")) return;
@@ -379,12 +405,83 @@ export default function AdminPage() {
             <div className="bg-[#2f3136] rounded-lg border border-gray-600 p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-semibold text-white">Gerenciar Permissões</h2>
-                <button
-                  onClick={() => setShowUserForm(true)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  + Adicionar Usuário
-                </button>
+                <div className="flex gap-3 items-center">
+                  {/* Filtro de Discord ID */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Buscar Discord ID..."
+                      value={discordIdFilter}
+                      onChange={(e) => setDiscordIdFilter(e.target.value)}
+                      className="w-64 px-4 py-2 bg-[#40444b] text-gray-200 border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#5865F2] focus:border-transparent placeholder-gray-500"
+                    />
+                    {discordIdFilter && (
+                      <button
+                        onClick={() => setDiscordIdFilter('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Filtro de Roles */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                      className="bg-[#40444b] text-gray-200 px-4 py-2 rounded-lg hover:bg-[#4f545c] transition-colors flex items-center gap-2 border border-gray-600"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                      Filtrar Roles
+                      <span className="text-xs bg-[#5865F2] px-2 py-0.5 rounded-full">{roleFilter.length}</span>
+                    </button>
+                    
+                    {showFilterDropdown && (
+                      <div className="absolute right-0 mt-2 w-48 bg-[#2f3136] border border-gray-600 rounded-lg shadow-lg z-10">
+                        <div className="p-3 space-y-2">
+                          <label className="flex items-center gap-2 cursor-pointer hover:bg-[#40444b] p-2 rounded">
+                            <input
+                              type="checkbox"
+                              checked={roleFilter.includes('USER')}
+                              onChange={() => toggleRoleFilter('USER')}
+                              className="w-4 h-4 text-[#5865F2] bg-[#40444b] border-gray-600 rounded focus:ring-[#5865F2]"
+                            />
+                            <span className="text-gray-200">USER</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer hover:bg-[#40444b] p-2 rounded">
+                            <input
+                              type="checkbox"
+                              checked={roleFilter.includes('READER')}
+                              onChange={() => toggleRoleFilter('READER')}
+                              className="w-4 h-4 text-[#5865F2] bg-[#40444b] border-gray-600 rounded focus:ring-[#5865F2]"
+                            />
+                            <span className="text-gray-200">READER</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer hover:bg-[#40444b] p-2 rounded">
+                            <input
+                              type="checkbox"
+                              checked={roleFilter.includes('ADMIN')}
+                              onChange={() => toggleRoleFilter('ADMIN')}
+                              className="w-4 h-4 text-[#5865F2] bg-[#40444b] border-gray-600 rounded focus:ring-[#5865F2]"
+                            />
+                            <span className="text-gray-200">ADMIN</span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={() => setShowUserForm(true)}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    + Adicionar Usuário
+                  </button>
+                </div>
               </div>
               
               {loadingUsers ? (
@@ -402,7 +499,7 @@ export default function AdminPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-600">
                       {/* Usuários cadastrados */}
-                      {users.filter(user => user.role === 'ADMIN' || user.role === 'READER').map((user) => (
+                      {filteredUsers.map((user) => (
                         <tr key={user.id} className="hover:bg-[#36393f]">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
@@ -437,7 +534,7 @@ export default function AdminPage() {
                       ))}
                       
                       {/* Roles pré-configuradas */}
-                      {preConfiguredRoles.filter(roleConfig => roleConfig.role === 'ADMIN' || roleConfig.role === 'READER').map((roleConfig) => (
+                      {filteredPreConfigured.map((roleConfig) => (
                         <tr key={roleConfig.id} className="hover:bg-[#36393f] bg-[#40444b]/30">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
@@ -476,10 +573,10 @@ export default function AdminPage() {
                         </tr>
                       ))}
                       
-                      {users.filter(user => user.role === 'ADMIN' || user.role === 'READER').length === 0 && preConfiguredRoles.filter(roleConfig => roleConfig.role === 'ADMIN' || roleConfig.role === 'READER').length === 0 && (
+                      {filteredUsers.length === 0 && filteredPreConfigured.length === 0 && (
                         <tr>
                           <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
-                            Nenhum usuário ou role configurada
+                            Nenhum usuário encontrado com os filtros selecionados
                           </td>
                         </tr>
                       )}
@@ -827,6 +924,7 @@ export default function AdminPage() {
                       onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value as Role })}
                       className="w-full px-4 py-2 bg-[#40444b] text-gray-100 border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#5865F2] focus:border-transparent"
                     >
+                      <option value="USER">USER</option>
                       <option value="READER">READER</option>
                       <option value="ADMIN">ADMIN</option>
                     </select>
@@ -875,6 +973,7 @@ export default function AdminPage() {
                       onChange={(e) => setEditingUserRole({ ...editingUserRole, role: e.target.value as Role })}
                       className="w-full px-4 py-2 bg-[#40444b] text-gray-100 border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#5865F2] focus:border-transparent"
                     >
+                      <option value="USER">USER</option>
                       <option value="READER">READER</option>
                       <option value="ADMIN">ADMIN</option>
                     </select>
