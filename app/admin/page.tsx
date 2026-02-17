@@ -57,7 +57,7 @@ export default function AdminPage() {
   const [preConfiguredRoles, setPreConfiguredRoles] = useState<PreConfiguredRole[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [showUserForm, setShowUserForm] = useState(false);
-  const [newUserData, setNewUserData] = useState({ discordId: '', role: 'USER' as Role });
+  const [newUserData, setNewUserData] = useState({ discordId: '', role: 'READER' as Role });
   const [editingUserRole, setEditingUserRole] = useState<{ id: string; role: Role; type: 'user' | 'preconfigured' } | null>(null);
   
   // Questions state
@@ -402,7 +402,7 @@ export default function AdminPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-600">
                       {/* Usuários cadastrados */}
-                      {users.map((user) => (
+                      {users.filter(user => user.role === 'ADMIN' || user.role === 'READER').map((user) => (
                         <tr key={user.id} className="hover:bg-[#36393f]">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
@@ -437,7 +437,7 @@ export default function AdminPage() {
                       ))}
                       
                       {/* Roles pré-configuradas */}
-                      {preConfiguredRoles.map((roleConfig) => (
+                      {preConfiguredRoles.filter(roleConfig => roleConfig.role === 'ADMIN' || roleConfig.role === 'READER').map((roleConfig) => (
                         <tr key={roleConfig.id} className="hover:bg-[#36393f] bg-[#40444b]/30">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
@@ -476,7 +476,7 @@ export default function AdminPage() {
                         </tr>
                       ))}
                       
-                      {users.length === 0 && preConfiguredRoles.length === 0 && (
+                      {users.filter(user => user.role === 'ADMIN' || user.role === 'READER').length === 0 && preConfiguredRoles.filter(roleConfig => roleConfig.role === 'ADMIN' || roleConfig.role === 'READER').length === 0 && (
                         <tr>
                           <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
                             Nenhum usuário ou role configurada
@@ -827,7 +827,6 @@ export default function AdminPage() {
                       onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value as Role })}
                       className="w-full px-4 py-2 bg-[#40444b] text-gray-100 border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#5865F2] focus:border-transparent"
                     >
-                      <option value="USER">USER</option>
                       <option value="READER">READER</option>
                       <option value="ADMIN">ADMIN</option>
                     </select>
@@ -876,7 +875,6 @@ export default function AdminPage() {
                       onChange={(e) => setEditingUserRole({ ...editingUserRole, role: e.target.value as Role })}
                       className="w-full px-4 py-2 bg-[#40444b] text-gray-100 border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#5865F2] focus:border-transparent"
                     >
-                      <option value="USER">USER</option>
                       <option value="READER">READER</option>
                       <option value="ADMIN">ADMIN</option>
                     </select>
