@@ -11,7 +11,7 @@ function CustomPrismaAdapter(p: typeof prisma): Adapter {
   
   return {
     ...baseAdapter,
-    async createUser(user: Omit<AdapterUser, "id">) {
+    createUser: async (user: AdapterUser | Omit<AdapterUser, "id">): Promise<AdapterUser> => {
       // Verificar se já existe um usuário com este discordId
       if ((user as any).discordId) {
         const existingUser = await p.user.findUnique({
@@ -33,9 +33,9 @@ function CustomPrismaAdapter(p: typeof prisma): Adapter {
       }
       
       // Se não existir, criar normalmente
-      return baseAdapter.createUser!(user);
+      return baseAdapter.createUser!(user as Omit<AdapterUser, "id">);
     },
-    async linkAccount(account: AdapterAccount) {
+    linkAccount: async (account: AdapterAccount): Promise<AdapterAccount | null | undefined> => {
       // Verificar se já existe um usuário com este discordId (do providerAccountId)
       if (account.provider === 'discord') {
         const existingUser = await p.user.findUnique({
