@@ -31,6 +31,7 @@ export default function FormPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [formIntroText, setFormIntroText] = useState<string>("");
   
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -41,6 +42,7 @@ export default function FormPage() {
   useEffect(() => {
     fetchQuestions();
     fetchUserResponses();
+    fetchFormSettings();
   }, []);
   
   const fetchQuestions = async () => {
@@ -68,6 +70,18 @@ export default function FormPage() {
       }
     } catch (error) {
       console.error("Erro ao buscar respostas:", error);
+    }
+  };
+  
+  const fetchFormSettings = async () => {
+    try {
+      const res = await fetch("/api/admin/settings");
+      if (res.ok) {
+        const data = await res.json();
+        setFormIntroText(data.formIntroText || "");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar configurações:", error);
     }
   };
   
@@ -230,26 +244,8 @@ export default function FormPage() {
             {/* Card Informativo */}
             <div className="bg-[#2f3136] border border-gray-600 rounded-lg p-6 mb-6">
               <h2 className="text-2xl font-bold text-white mb-4">Projetos CPX XP</h2>
-              <div className="text-gray-300 space-y-3 leading-relaxed">
-                <p>
-                  Este formulário tem como objetivo cadastrar e avaliar projetos de grupos ilegais para atuação dentro do servidor CPX XP. Para que a proposta seja considerada, é necessário que o grupo tenha no mínimo 20 membros ativos, e que o LÍDER possua idade mínima de 18 anos.
-                </p>
-                <p>
-                  👉 Projetos voltados para RESTAURANTES deverão contar com no mínimo 5 integrantes, e o projeto deverá apresentar toda a estrutura do restaurante, incluindo organização interna, funcionamento, cargos/funções, proposta temática e forma de atuação dentro do servidor.
-                </p>
-                <p>
-                  O projeto deverá ser enviado obrigatoriamente em Google Docs, sendo aceitos apenas links com acesso liberado para visualização pela equipe do elenco. Outros formatos de envio não serão considerados.
-                </p>
-                <p>
-                  A aprovação deste formulário não garante o ingresso direto como facção oficial no servidor. Caso o projeto seja aprovado na análise inicial, o grupo deverá obrigatoriamente passar pelo processo da Pista, onde será avaliado dentro do jogo antes de qualquer possível oficialização.
-                </p>
-                <p>
-                  Agradecemos o interesse e desejamos boa sorte no processo.
-                </p>
-                <p className="mt-4 text-gray-400 italic">
-                  Att,<br />
-                  Equipe do Elenco CPX XP
-                </p>
+              <div className="text-gray-300 space-y-3 leading-relaxed whitespace-pre-line">
+                {formIntroText}
               </div>
             </div>
             

@@ -50,7 +50,7 @@ interface Webhook {
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"users" | "questions" | "webhooks">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "questions" | "webhooks" | "settings">("users");
   
   // Users state
   const [users, setUsers] = useState<User[]>([]);
@@ -75,6 +75,11 @@ export default function AdminPage() {
   const [showWebhookForm, setShowWebhookForm] = useState(false);
   const [editingWebhook, setEditingWebhook] = useState<Webhook | null>(null);
   
+  // Settings state
+  const [formIntroText, setFormIntroText] = useState<string>("");
+  const [loadingSettings, setLoadingSettings] = useState(true);
+  const [savingSettings, setSavingSettings] = useState(false);
+  
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -91,6 +96,7 @@ export default function AdminPage() {
       fetchUsers();
       fetchQuestions();
       fetchWebhooks();
+      fetchSettings();
     }
   }, [session]);
   
@@ -344,6 +350,43 @@ export default function AdminPage() {
     }
   };
   
+  // Settings functions
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch("/api/admin/settings");
+      if (res.ok) {
+        const data = await res.json();
+        setFormIntroText(data.formIntroText || "");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar configurações:", error);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+  
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "formIntroText", value: formIntroText }),
+      });
+      
+      if (res.ok) {
+        alert("Configurações salvas com sucesso!");
+      } else {
+        alert("Erro ao salvar configurações");
+      }
+    } catch (error) {
+      console.error("Erro ao salvar configurações:", error);
+      alert("Erro ao salvar configurações");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+  
   if (status === "loading") {
     return (
       <>
@@ -397,6 +440,16 @@ export default function AdminPage() {
                 }`}
               >
                 Webhooks Discord
+              </button>
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                  activeTab === "settings"
+                    ? "bg-[#5865F2] text-white"
+                    : "bg-[#40444b] text-gray-300 hover:bg-[#4f545c]"
+                }`}
+              >
+                Configurações
               </button>
             </div>
           
@@ -883,6 +936,45 @@ export default function AdminPage() {
                         </button>
                       </div>
                     </form>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Settings Tab */}
+          {activeTab === "settings" && (
+            <div className="bg-[#2f3136] rounded-lg border border-gray-600 p-6">
+              <h2 className="text-2xl font-semibold text-white mb-4">Configurações do Formulário</h2>
+              
+              {loadingSettings ? (
+                <p className="text-center text-gray-300">Carregando...</p>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-200 mb-2">
+                      Texto Introdutório do Formulário
+                    </label>
+                    <p className="text-xs text-gray-400 mb-2">
+                      Este texto será exibido no topo da página do formulário, antes das perguntas.
+                    </p>
+                    <textarea
+                      value={formIntroText}
+                      onChange={(e) => setFormIntroText(e.target.value)}
+                      rows={15}
+                      className="w-full px-4 py-3 bg-[#40444b] text-gray-100 border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#5865F2] focus:border-transparent font-mono text-sm"
+                      placeholder="Digite o texto introdutório do formulário..."
+                    />
+                  </div>
+                  
+                  <div className="pt-4">
+                    <button
+                      onClick={handleSaveSettings}
+                      disabled={savingSettings}
+                      className="bg-[#5865F2] text-white px-6 py-3 rounded-lg hover:bg-[#4752C4] transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed font-semibold"
+                    >
+                      {savingSettings ? "Salvando..." : "Salvar Configurações"}
+                    </button>
                   </div>
                 </div>
               )}
